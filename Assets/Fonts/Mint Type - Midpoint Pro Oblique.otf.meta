@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 16ce9f104683e674085f96cb0dba0af7
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Midpoint Pro
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 55f38f7633935004d94458cd4126a796, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
