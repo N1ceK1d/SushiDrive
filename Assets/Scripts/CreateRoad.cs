@@ -26,10 +26,26 @@ public class CreateRoad : MonoBehaviour
             blocks.Add(block); //Добавление блока в коллекцию
 
             float side = rand.Next(1, 3) == 1 ? -1f : 1f; //Случайное определение стороны появления машины
+            GameObject car;
+            float distance = Random.Range(24.69f, 60f);
+            if(side == 1)
+            {
+                car = Instantiate(carPrefab, new Vector3(last.transform.position.x + distance, last.transform.position.y + 0.20f, last.transform.position.z + 1.70f * side), Quaternion.Euler(new Vector3(0f, 0f, 0f)));
+            }
+            else 
+            {
+                car = Instantiate(carPrefab, new Vector3(last.transform.position.x + distance, last.transform.position.y + 0.20f, last.transform.position.z + 1.70f * side), Quaternion.Euler(new Vector3(0f, 180f, 0f)));
+            }
  
             ////Добавление машины на сцену
-            var car = Instantiate(carPrefab, new Vector3(last.transform.position.x + 24.69f, last.transform.position.y + 0.20f, last.transform.position.z + 1.30f * side), Quaternion.Euler(new Vector3(0f, 0f, 0f)));
+            //var car = Instantiate(carPrefab, new Vector3(last.transform.position.x + 24.69f, last.transform.position.y + 0.20f, last.transform.position.z + 1.70f * side), Quaternion.Euler(new Vector3(0f, 0f, 0f)));
             car.transform.SetParent(gameObject.transform); //Добавление машины в объект Road
+
+            if(rand.Next(0, 100) > 70) //Добавление монеты с вероятностью 30%
+            {
+                var coin = Instantiate(coinPrefab, new Vector3(last.transform.position.x + 24.69f, last.transform.position.y + -0.316f, last.transform.position.z + 1.50f * side * -1f), Quaternion.identity);
+                coin.transform.SetParent(gameObject.transform);
+            }
         }
     
         foreach (GameObject block in blocks) 
