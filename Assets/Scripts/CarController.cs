@@ -41,10 +41,13 @@ public class CarController : MonoBehaviour
 
     private float vertical;
     private float horizontal;
-
+    private bool isRear = false;
     private float downForce;
     private float currSpeed;
     public Rigidbody car;
+    private Vector3 carUp;
+    public TMP_Text scoreValue;
+    public GameObject stopLight;
 
     private int coins = 0;
     private bool isAlive = true; //Жива ли машина. Если да, то она будет двигаться
@@ -52,6 +55,14 @@ public class CarController : MonoBehaviour
     private float topSpeedDrag, idleDrag = 0.05f;
     private float reverseDrag = 0.6f;
 	public  float runningDrag = 0.02f;
+
+    public DeadScreen screen;
+
+    // private void Awake() {
+    //     currentGear = 0;
+    //     currentRatio = gearRatios[currentGear];
+    //     currentGearText.text = "N";
+    // }
 
     private void Start() {
         car = GetComponent<Rigidbody>();
@@ -75,6 +86,10 @@ public class CarController : MonoBehaviour
 
         addDownForce();
         adjustDrag();
+        Handbrake();
+        CheckInverted();
+        CheckRearDrive();
+        StopSignals();
     }
 
     private void Update() {
@@ -86,10 +101,11 @@ public class CarController : MonoBehaviour
         {
             LowerGear();
         }  
-        Handbrake();
+        
+        scoreValue.text = coins.ToString();
     }
 
-    public void PozitiveAckermanSteering()
+    private void PozitiveAckermanSteering()
     {
         if(horizontal > 0)
         {
@@ -108,13 +124,12 @@ public class CarController : MonoBehaviour
         }
     }
 
-    public void Handbrake()
+    private void Handbrake()
     {
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKey(KeyCode.Space))
         {
             RR.brakeTorque = brakePower;
             RL.brakeTorque = brakePower;
-            Debug.Log("Stope");
         }
         else 
         {
@@ -123,19 +138,19 @@ public class CarController : MonoBehaviour
         }
     }
 
-	void addDownForce()
+	private void addDownForce()
     {
 		downForce = currSpeed / 2;
 		car.AddForce(-transform.up * downForce * car.velocity.magnitude);
 	}
 
-     public float MaxSpeed()
+    private float MaxSpeed()
     {
         maxSpeed = (wheelCirle / (mainGearRatio * currentRatio)) * (60f/1000f) * maxRPM;
         return maxSpeed;
     }
 
-    public void LimitSpeed()
+    private void LimitSpeed()
     {
         if(car.velocity.magnitude > maxSpeed / 3.6f)
         {
@@ -143,21 +158,20 @@ public class CarController : MonoBehaviour
         }
     }
 
-    public float CalculateWheelTorque()
+    private float CalculateWheelTorque()
     {
         float torque = 0.0f;
         torque = (engineTorque * currentRatio * mainGearRatio) / 2f;
-        Debug.Log(torque);
         return torque;
     }
 
-    public float CalculateEngineTorque()
+    private float CalculateEngineTorque()
     {
         engineTorque = enginePower * 9550f / maxRPM; 
         return engineTorque;
     }
 
-    public float BoostGear()
+    private float BoostGear()
     {
         if(currentGear < gearRatios.Length - 1)
         {
@@ -169,14 +183,20 @@ public class CarController : MonoBehaviour
         
     }
 
-    public float LowerGear()
+    private float LowerGear()
     {
         if(currentGear >= 0)
         {
             currentGear -= 1;
             currentRatio = gearRatios[currentGear];
+            currentGearText.text = currentGear.ToString();
         }
-        currentGearText.text = currentGear.ToString();
+        if(currentGear == 0)
+        {
+            currentGearText.text = "R";
+            currentRatio = gearRatios[currentGear];
+        }
+        
         return gearRatios[currentGear];
     }
 
@@ -188,7 +208,7 @@ public class CarController : MonoBehaviour
         }
     }
 
-    void adjustDrag()
+    private void adjustDrag()
 	{
 		if (currSpeed >= maxSpeed)
 			car.drag = topSpeedDrag;
@@ -201,43 +221,73 @@ public class CarController : MonoBehaviour
 		}
 	}
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         Debug.Log("Car");
         if(other.tag == "Car" || other.tag == "Wall") //Если машина игрока столкнулась со стеной или другой машиной
         {
-            Debug.Log("Car");
-            if(car != null) //Если есть модель
-			{
-				if(!isKilled) //Если триггер ещё не сработал
-				{
-					//Destroy(car); //Удалить старую модель
-
-					//Добавить новую модель
-					// var broken = Instantiate(brokenPrefab, transform.position, Quaternion.Euler(new Vector3(0f, -270f, 0f)));
-					// broken.transform.SetParent(modelHolder.transform);
-
-					isKilled = true; //Указать, что триггер сработал
-					StartCoroutine("Die"); //Запустить процесс умирания
-				}
-			}
+            isKilled = true; //Указать, что триггер сработал
+			Die(); //Запустить процесс умирания
         }
     
         if(other.tag == "Coin") //Если столкновение с монетой
         {
             if(car != null) //Если столкнулась машина игрока
             {
-                coins += 100; //Добавить 100 очков
+                coins += 1; //Добавить 100 очков
 
                 other.GetComponent<SushiCoin>().Delete(); //Удалить монету
             }
         }
     }
     
-    IEnumerator Die() //Процесс умирания
+    private void Die() //Процесс умирания
     {
-        Debug.Log("End!");
-        yield return new WaitForSeconds(2f); //Подождать 2 секунды
-        //SceneManager.LoadScene("Menu"); //Перейти в меню
+        screen.totalScore = coins;
+        screen.endScore.text = "Очки: " + coins.ToString();
+        screen.ShowDeadScreen();
+    }
+
+    private void CheckInverted()
+    {
+        int angle = (int) Mathf.Abs(transform.rotation.eulerAngles.z % 360);
+        if (angle >= 90 && angle <= 180)
+        {
+            Die();
+            Debug.Log("Машина перевернулась!");
+        }
+    }
+
+    private void StopSignals()
+    {
+        if(vertical < 0 && currentGear != 0)
+        {
+            stopLight.SetActive(true);
+        }
+        else 
+        {
+            stopLight.SetActive(false);
+        }
+    }
+
+    private void CheckRearDrive()
+    {
+        
+        if(vertical < 0 && currSpeed <= 10)
+        {
+            isRear = true;
+            currentGearText.text = "R";
+            currentGear = 0;
+            currentRatio = gearRatios[0];
+        }
+        if(isRear)
+        {
+            if((vertical > 0 && (currSpeed <= maxSpeed && currentGear == 0)))
+            {
+                currentGearText.text = "1";
+                currentGear = 1;
+                currentRatio = gearRatios[1];
+            }
+        }
     }
 }

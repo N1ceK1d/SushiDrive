@@ -18,6 +18,7 @@ public class MainMenu : MonoBehaviour
     public void StartGuest()
     {
         SceneManager.LoadScene("SampleScene");
+        Time.timeScale = 1f;
     }
 
     public void Quit()
